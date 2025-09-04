@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Destajo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Datos para Destajo</h1>
+    <div class="actions">
+      <!-- Exporta el Google Sheet como .xlsx -->
+      <button id="download-xlsx">Descargar Excel</button>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <section id="filters">
+    <div class="filter">
+      <label for="filter-conductor">Conductor:</label>
+      <select id="filter-conductor">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label for="filter-recibidor">Recibidor:</label>
+      <select id="filter-recibidor">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label for="filter-fecha">Fecha (FechaEntrada):</label>
+      <input type="date" id="filter-fecha">
+    </div>
+    <div class="filter">
+      <button id="clear-filters">Limpiar filtros</button>
+    </div>
+  </section>
+
+  <!-- Tabla -->
+  <section id="table-section">
+    <p id="row-count" class="row-count"></p>
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Conductor</th>
+          <th>Sacos</th>
+          <th>QQs Netos</th>
+          <th>Recibidor</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </section>
+
+  <!-- SheetJS para fallback local y utilidades -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
