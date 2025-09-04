@@ -1,29 +1,23 @@
 /*
- * script.js — versión ajustada al archivo con encabezados:
- * FechaEntrada, Conductor, CantSacos, QQs Netos, Recibidor
- *
- * Fuente preferida: Google Sheets (gviz). Fallback: OBD.xlsx local.
- * Filtros: Conductor, Recibidor, FechaEntrada.
- * Botón: descargar Excel desde Google Sheets (export a .xlsx).
+ * script.js — Encabezados exactos:
+ * FechaEntrada, Conductor, Procedencia, CantSacos, QQs Netos, Recibidor
+ * Filtros: Conductor, Recibidor, FechaEntrada
+ * Descargas:
+ *   - Origen (Google Sheets -> .xlsx)
+ *   - Vista actual (lo que ves en la tabla, con filtros) -> .xlsx con SheetJS
  */
 
 // -------------------- Configuración --------------------
 let dataset = [];
+let currentView = []; // <- mantiene lo que se está mostrando en la tabla
 
-// Si usas Google Sheets:
-const GOOGLE_SHEET_ID  = '1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6'; // <-- el tuyo
-const GOOGLE_SHEET_GID = '0';                                  // pestaña
-
-// Si en lugar de una hoja usas un archivo Excel en Drive NO–Sheets,
-// reemplaza la lógica del botón por un enlace de descarga directa de Drive.
-// Ejemplo de export de Google Sheets (ya listo en el botón):
-// https://docs.google.com/spreadsheets/d/ID/export?format=xlsx&id=ID&gid=GID
+// Config de Google Sheets (opcional, deja vacío si no usas)
+const GOOGLE_SHEET_ID  = '1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6'; // tu ID
+const GOOGLE_SHEET_GID = '0';                                   // pestaña
 
 // -------------------- Utilidades --------------------
 function toISODate(val) {
   if (val == null || val === '') return '';
-
-  // gviz Date(YYYY,MM,DD[,hh,mm,ss])
   if (typeof val === 'string' && /^Date\(/.test(val)) {
     const m = val.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
     if (m) {
@@ -32,28 +26,20 @@ function toISODate(val) {
       return dt.toISOString().slice(0, 10);
     }
   }
-
-  // "DD/MM/YYYY" o "DD-MM-YYYY"
   if (typeof val === 'string') {
-    let m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    const m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (m) {
       const [, dd, mm, yyyy] = m;
-      const d2 = String(dd).padStart(2, '0');
-      const m2 = String(mm).padStart(2, '0');
-      return `${yyyy}-${m2}-${d2}`;
+      return `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val; // ISO ya
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
   }
-
-  // Serial de Excel
   if (typeof val === 'number') {
     const ms = Math.round((val - 25569) * 86400 * 1000);
     return new Date(ms).toISOString().slice(0, 10);
   }
-
   const dt = new Date(val);
   if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
-
   return '';
 }
 
@@ -69,7 +55,6 @@ function debounce(fn, wait = 150) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
 }
 
-// Normaliza dataset para filtros rápidos
 function prepareDataset() {
   dataset = dataset.map(row => ({
     ...row,
@@ -79,7 +64,7 @@ function prepareDataset() {
 
 // -------------------- Carga de datos --------------------
 async function loadDataset() {
-  // 1) Google Sheets (gviz JSON)
+  // 1) Google Sheets (gviz)
   if (GOOGLE_SHEET_ID) {
     try {
       const gvizUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?gid=${GOOGLE_SHEET_GID}&tqx=out:json&t=${Date.now()}`;
@@ -88,30 +73,25 @@ async function loadDataset() {
       const text = await res.text();
       const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
       const gvizData = JSON.parse(jsonStr);
-
       const cols = gvizData.table.cols.map(c => c.label || c.id || '');
       const rows = gvizData.table.rows || [];
-
       dataset = rows.map(r => {
         const obj = {};
         cols.forEach((label, i) => {
           const cell = r.c?.[i];
-          let v = cell ? (cell.f ?? cell.v) : '';
-          obj[label] = v ?? '';
+          obj[label] = cell ? (cell.f ?? cell.v ?? '') : '';
         });
         return obj;
       });
-
       prepareDataset();
       initPage();
       return;
     } catch (err) {
       console.warn('Fallo Google Sheets, usando Excel local:', err);
-      // sigue a fallback
     }
   }
 
-  // 2) Fallback: archivo Excel local (OBD.xlsx en la misma carpeta)
+  // 2) Fallback local OBD.xlsx
   try {
     const res = await fetch('OBD.xlsx');
     const ab  = await res.arrayBuffer();
@@ -128,13 +108,14 @@ async function loadDataset() {
 // -------------------- Inicialización UI --------------------
 function initPage() {
   populateFilters();
-  renderTable(dataset);
+  renderTable(dataset); // esto también setea currentView
 
   const selConductor = document.getElementById('filter-conductor');
   const selRecibidor = document.getElementById('filter-recibidor');
   const inpFecha     = document.getElementById('filter-fecha');
   const btnClear     = document.getElementById('clear-filters');
-  const btnDownload  = document.getElementById('download-xlsx');
+  const btnRemote    = document.getElementById('download-xlsx-remote');
+  const btnView      = document.getElementById('download-xlsx-view');
 
   const debouncedApply = debounce(applyFilters, 150);
 
@@ -151,19 +132,19 @@ function initPage() {
     });
   }
 
-  // Botón para descargar el Excel desde Google
-  if (btnDownload) {
-    btnDownload.addEventListener('click', () => {
+  if (btnRemote) {
+    btnRemote.addEventListener('click', () => {
       if (!GOOGLE_SHEET_ID) {
         alert('Configura GOOGLE_SHEET_ID para descargar desde Google Sheets.');
         return;
       }
-      //https://docs.google.com/spreadsheets/d/1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6/edit?usp=drive_link&ouid=116572784923002226502&rtpof=true&sd=true
-      // Export directo a .xlsx de la hoja (usa GID actual)
       const url = `https://drive.google.com/uc?export=download&id=1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6`;
-      // Abre en la misma pestaña o en una nueva:
-      window.open(url, '_blank'); // o: location.href = url;
+      window.open(url, '_blank');
     });
+  }
+
+  if (btnView) {
+    btnView.addEventListener('click', exportCurrentViewToExcel);
   }
 }
 
@@ -172,41 +153,45 @@ function populateFilters() {
   const selRecibidor = document.getElementById('filter-recibidor');
   if (!selConductor || !selRecibidor) return;
 
-  const conductores = Array.from(
-    new Set(dataset.map(r => r['Conductor']).filter(Boolean))
-  ).sort();
-
-  const recibidores = Array.from(
-    new Set(dataset.map(r => r['Recibidor']).filter(Boolean))
-  ).sort();
+  const conductores = Array.from(new Set(dataset.map(r => r['Conductor']).filter(Boolean))).sort();
+  const recibidores = Array.from(new Set(dataset.map(r => r['Recibidor']).filter(Boolean))).sort();
 
   conductores.forEach(v => {
     const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = v;
+    opt.value = v; opt.textContent = v;
     selConductor.appendChild(opt);
   });
 
   recibidores.forEach(v => {
     const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = v;
+    opt.value = v; opt.textContent = v;
     selRecibidor.appendChild(opt);
   });
 }
 
-// -------------------- Renderizado --------------------
+// -------------------- Renderizado (con data-label para móvil) --------------------
 function renderTable(data) {
   const tbody = document.getElementById('table-body');
   if (!tbody) return;
-
   tbody.innerHTML = '';
+
+  currentView = data.slice(); // <- guarda la vista actual para exportar
+
+  const LABELS = {
+    'FechaEntrada': 'FechaEntrada',
+    'Conductor': 'Conductor',
+    'Procedencia': 'Procedencia',
+    'CantSacos': 'CantSacos',
+    'QQs Netos': 'QQs Netos',
+    'Recibidor': 'Recibidor'
+  };
 
   const BATCH = 200;
   let i = 0;
 
-  function makeTd(text) {
+  function makeTd(label, text) {
     const td = document.createElement('td');
+    td.setAttribute('data-label', label);
     td.textContent = text ?? '';
     return td;
   }
@@ -219,13 +204,14 @@ function renderTable(data) {
       const row = data[i];
       const tr = document.createElement('tr');
 
-      const tdFecha = makeTd(formatDateDisplay(row.__fechaISO || row['FechaEntrada']));
-      const tdCond  = makeTd(row['Conductor']);
-      const tdSacos = makeTd(row['CantSacos']);
-      const tdQQs   = makeTd(row['QQs Netos']);
-      const tdRec   = makeTd(row['Recibidor']);
+      const tdFecha = makeTd(LABELS['FechaEntrada'], formatDateDisplay(row.__fechaISO || row['FechaEntrada']));
+      const tdCond  = makeTd(LABELS['Conductor'],    row['Conductor']);
+      const tdProc  = makeTd(LABELS['Procedencia'],  row['Procedencia']);
+      const tdSacos = makeTd(LABELS['CantSacos'],    row['CantSacos']);
+      const tdQQs   = makeTd(LABELS['QQs Netos'],    row['QQs Netos']);
+      const tdRec   = makeTd(LABELS['Recibidor'],    row['Recibidor']);
 
-      tr.append(tdFecha, tdCond, tdSacos, tdQQs, tdRec);
+      tr.append(tdFecha, tdCond, tdProc, tdSacos, tdQQs, tdRec);
       frag.appendChild(tr);
     }
 
@@ -245,23 +231,68 @@ function applyFilters() {
 
   let filtered = dataset;
 
-  if (conductor) {
-    filtered = filtered.filter(r => (r['Conductor'] || '') === conductor);
-  }
-  if (recibidor) {
-    filtered = filtered.filter(r => (r['Recibidor'] || '') === recibidor);
-  }
-  if (fechaISO) {
-    filtered = filtered.filter(r => r.__fechaISO === fechaISO);
-  }
+  if (conductor) filtered = filtered.filter(r => (r['Conductor'] || '') === conductor);
+  if (recibidor) filtered = filtered.filter(r => (r['Recibidor'] || '') === recibidor);
+  if (fechaISO)  filtered = filtered.filter(r => r.__fechaISO === fechaISO);
 
   renderTable(filtered);
 }
 
+// -------------------- Contador --------------------
 function updateRowCount(count) {
   const el = document.getElementById('row-count');
   if (!el) return;
   el.textContent = `Mostrando ${count} ${count === 1 ? 'registro' : 'registros'}.`;
+}
+
+// -------------------- Exportar vista actual a Excel --------------------
+function exportCurrentViewToExcel() {
+  if (!currentView || currentView.length === 0) {
+    alert('No hay datos para exportar.');
+    return;
+  }
+
+  // Orden y nombres de columnas exactamente como los encabezados
+  const header = ['FechaEntrada','Conductor','Procedencia','CantSacos','QQs Netos','Recibidor'];
+
+  // Construir datos (usamos ISO para fechas; Excel las reconoce o quedan como texto estándar)
+  const rows = currentView.map(r => ([
+    toISODate(r.__fechaISO || r['FechaEntrada']) || '',
+    r['Conductor'] ?? '',
+    r['Procedencia'] ?? '',
+    toNumber(r['CantSacos']),
+    toNumber(r['QQs Netos']),
+    r['Recibidor'] ?? ''
+  ]));
+
+  const aoa = [header, ...rows];
+  const ws  = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Anchos aproximados
+  ws['!cols'] = [
+    { wch: 12 }, // FechaEntrada
+    { wch: 22 }, // Conductor
+    { wch: 22 }, // Procedencia
+    { wch: 10 }, // CantSacos
+    { wch: 12 }, // QQs Netos
+    { wch: 18 }  // Recibidor
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vista');
+
+  // Nombre del archivo
+  const fechaSel = document.getElementById('filter-fecha')?.value || 'todos';
+  const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const filename = `destajo_vista_${fechaSel}_${stamp}.xlsx`;
+
+  XLSX.writeFile(wb, filename);
+}
+
+function toNumber(val) {
+  if (val == null || val === '') return '';
+  const n = typeof val === 'number' ? val : parseFloat(String(val).replace(',', '.'));
+  return isNaN(n) ? String(val) : n;
 }
 
 // -------------------- Arranque --------------------

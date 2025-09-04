@@ -2,36 +2,45 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Destajo</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#data-table">Saltar al contenido</a>
+
   <header class="header">
-    <h1>Datos para Destajo</h1>
-    <div class="actions">
-      <!-- Exporta el Google Sheet como .xlsx -->
-      <button id="download-xlsx">Descargar Excel</button>
-    </div>
-  </header>
+  <h1>Datos para Destajo</h1>
+  <div class="actions">
+    <!-- Exporta el archivo de origen (Google Sheet -> .xlsx) -->
+    <button id="download-xlsx-remote" class="btn btn-primary" aria-label="Descargar Excel de origen">
+      ⬇️ Descargar Excel (origen)
+    </button>
+    <!-- Exporta lo que ves en la tabla (respetando filtros) -->
+    <button id="download-xlsx-view" class="btn btn-outline" aria-label="Descargar Excel de la vista actual">
+      ⬇️ Descargar vista filtrada
+    </button>
+  </div>
+</header>
+
 
   <!-- Filtros -->
-  <section id="filters">
+  <section id="filters" aria-label="Filtros">
     <div class="filter">
-      <label for="filter-conductor">Conductor:</label>
+      <label for="filter-conductor">Conductor</label>
       <select id="filter-conductor">
         <option value="">Todos</option>
       </select>
     </div>
     <div class="filter">
-      <label for="filter-recibidor">Recibidor:</label>
+      <label for="filter-recibidor">Recibidor</label>
       <select id="filter-recibidor">
         <option value="">Todos</option>
       </select>
     </div>
     <div class="filter">
-      <label for="filter-fecha">Fecha (FechaEntrada):</label>
-      <input type="date" id="filter-fecha">
+      <label for="filter-fecha">FechaEntrada</label>
+      <input type="date" id="filter-fecha" />
     </div>
     <div class="filter">
       <button id="clear-filters">Limpiar filtros</button>
@@ -40,22 +49,24 @@
 
   <!-- Tabla -->
   <section id="table-section">
-    <p id="row-count" class="row-count"></p>
+    <p id="row-count" class="row-count" aria-live="polite"></p>
     <table id="data-table">
+      <caption class="sr-only">Listado filtrable de FechaEntrada, Conductor, Procedencia, CantSacos, QQs Netos y Recibidor</caption>
       <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Conductor</th>
-          <th>Sacos</th>
-          <th>QQs Netos</th>
-          <th>Recibidor</th>
+          <th scope="col">FechaEntrada</th>
+          <th scope="col">Conductor</th>
+          <th scope="col">Procedencia</th>
+          <th scope="col">CantSacos</th>
+          <th scope="col">QQs Netos</th>
+          <th scope="col">Recibidor</th>
         </tr>
       </thead>
       <tbody id="table-body"></tbody>
     </table>
   </section>
 
-  <!-- SheetJS para fallback local y utilidades -->
+  <!-- SheetJS (fallback local) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="script.js"></script>
 </body>

@@ -160,3 +160,61 @@ header nav a:hover { text-decoration: underline; }
   html, body { overflow-x: hidden; }
 }
 
+/* Accesibilidad menor */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 1000;
+  background: #111; color: #fff; padding: 8px 12px; border-radius: 8px;
+}
+.skip-link:focus { left: 8px; top: 8px; }
+
+/* Botón estado foco visible */
+button:focus, select:focus, input:focus {
+  outline: 2px solid #2563eb; outline-offset: 2px;
+}
+/* ===== Botones de acción (coordinados con el tema) ===== */
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .02s ease, filter .15s ease;
+}
+
+.btn:hover { filter: brightness(0.96); }
+.btn:active { transform: translateY(1px); }
+.btn:focus { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.btn-outline {
+  background: #fff;
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* En pantallas pequeñas, que ocupen todo el ancho si hace falta */
+@media (max-width: 768px) {
+  .actions { width: 100%; }
+  .actions .btn { flex: 1 0 260px; }
+}
