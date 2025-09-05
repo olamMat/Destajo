@@ -178,10 +178,11 @@ function renderTable(data) {
   currentView = data.slice(); // <- guarda la vista actual para exportar
 
   const LABELS = {
-    'FechaEntrada': 'FechaEntrada',
-    'Conductor': 'Conductor',
-    'Procedencia': 'Procedencia',
-    'CantSacos': 'CantSacos',
+    'Fecha': 'FechaEntrada',
+    'Nombre del Conductor': 'Conductor',
+    'Cliente o Agencia': 'Procedencia',
+    'Documentos': 'MTNTs',
+    'Sacos': 'CantSacos',
     'QQs Netos': 'QQs Netos',
     'Recibidor': 'Recibidor'
   };
@@ -207,11 +208,12 @@ function renderTable(data) {
       const tdFecha = makeTd(LABELS['FechaEntrada'], formatDateDisplay(row.__fechaISO || row['FechaEntrada']));
       const tdCond  = makeTd(LABELS['Conductor'],    row['Conductor']);
       const tdProc  = makeTd(LABELS['Procedencia'],  row['Procedencia']);
+      const tdDoc  = makeTd(LABELS['Documentos'],  row['MTNTs']);
       const tdSacos = makeTd(LABELS['CantSacos'],    row['CantSacos']);
       const tdQQs   = makeTd(LABELS['QQs Netos'],    row['QQs Netos']);
       const tdRec   = makeTd(LABELS['Recibidor'],    row['Recibidor']);
 
-      tr.append(tdFecha, tdCond, tdProc, tdSacos, tdQQs, tdRec);
+      tr.append(tdFecha, tdCond, tdProc, tdDoc, tdSacos, tdQQs, tdRec);
       frag.appendChild(tr);
     }
 
@@ -253,13 +255,14 @@ function exportCurrentViewToExcel() {
   }
 
   // Orden y nombres de columnas exactamente como los encabezados
-  const header = ['FechaEntrada','Conductor','Procedencia','CantSacos','QQs Netos','Recibidor'];
+  const header = ['Fecha','Nombre del Conductor','Cliente o Agencia','Documentos','Sacos','QQs Netos','Recibidor'];
 
   // Construir datos (usamos ISO para fechas; Excel las reconoce o quedan como texto estándar)
   const rows = currentView.map(r => ([
     toISODate(r.__fechaISO || r['FechaEntrada']) || '',
     r['Conductor'] ?? '',
     r['Procedencia'] ?? '',
+    r['MTNTs'] ?? '',
     toNumber(r['CantSacos']),
     toNumber(r['QQs Netos']),
     r['Recibidor'] ?? ''
@@ -273,6 +276,7 @@ function exportCurrentViewToExcel() {
     { wch: 12 }, // FechaEntrada
     { wch: 22 }, // Conductor
     { wch: 22 }, // Procedencia
+    { wch: 40 }, // Documentos
     { wch: 10 }, // CantSacos
     { wch: 12 }, // QQs Netos
     { wch: 18 }  // Recibidor
