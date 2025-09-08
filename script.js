@@ -15,7 +15,7 @@ let currentView = []; // <- mantiene lo que se está mostrando en la tabla
 //https://docs.google.com/spreadsheets/d/16K-i-FwK86CKryE3JFhkvsS2JOszA-Ui/edit?usp=sharing&ouid=116572784923002226502&rtpof=true&sd=true
 // Config de Google Sheets (opcional, deja vacío si no usas)
 //const GOOGLE_SHEET_ID  = '1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6'; // tu ID
-const GOOGLE_SHEET_ID  = '116572784923002226502'; // tu ID
+const GOOGLE_SHEET_ID  = '16K‑i‑FwK86CKryE3JFhkvsS2JOszA‑Ui'; // tu ID
 const GOOGLE_SHEET_GID = '0';                                   // pestaña
 
 // -------------------- Utilidades --------------------
@@ -142,7 +142,7 @@ function initPage() {
         return;
       }
      // const url = `https://drive.google.com/uc?export=download&id=1HO1dnYe55Weyswxh1qfz1Y8_5nxoGDR6`;
-       const url = `https://drive.google.com/uc?export=download&id=116572784923002226502`;
+       const url = `https://drive.google.com/uc?export=download&id=16K‑i‑FwK86CKryE3JFhkvsS2JOszA‑Ui`;
       window.open(url, '_blank');
     });
   }
@@ -305,4 +305,5 @@ function toNumber(val) {
 
 // -------------------- Arranque --------------------
 document.addEventListener('DOMContentLoaded', loadDataset);
+
 
